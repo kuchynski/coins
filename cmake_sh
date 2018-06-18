@@ -1,7 +1,0 @@
-#!/bin/bash  
-
-#creates CMake configuration files inside folder build
-cmake -H. -Bbuild
-#generate the output program
-cmake --build build -- -j3
-
