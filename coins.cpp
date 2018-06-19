@@ -1,8 +1,5 @@
+
 #include <stdio.h> 
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/time.h>
 
 #define NUMBER_OF_COINS	5
 
@@ -12,7 +9,7 @@ int SearchResult(const int amount, const int level, const int *coins, int *resul
 int main()
 {
 	const int amount = 25;
-	const int coins[NUMBER_OF_COINS] = {5, 6, 7, 8, 10};
+	const int coins[NUMBER_OF_COINS] = {6, 7, 8, 9, 10};
 	int result[NUMBER_OF_COINS] = {0};
 
 	PrintTable(coins, "Coins:");
@@ -36,18 +33,16 @@ int SearchResult(const int amount, const int level, const int *coins, int *resul
 	int i = amount / coins[level];
 
 	while(i >= 0) {
-		int weight = coins[level] * i;
-		*(result + level) = i;
+		const int weight = coins[level] * i;
+		*(result + level) = i--;
 		if(weight == amount) {
 			PrintTable(result);
 			count ++;
-			i --;
 			continue;
 		}
 		if(level == 0)
 			break;
 		SearchResult(amount - weight, level - 1, coins, result);
-		i --;
 	}
 	*(result + level) = 0;
 
