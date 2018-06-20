@@ -1,51 +1,79 @@
 
-#include <stdio.h> 
+#include <iostream>
 
-#define NUMBER_OF_COINS	5
+using namespace std;
 
-void PrintTable(const int *coins, const char *str = "");
-int SearchResult(const int amount, const int level, const int *coins, int *result);
+class Exchange 
+{
+public:
+	Exchange(const int a, const int n, const int *c);
+	~Exchange();
+    void Run();
+private:
+	const int total_amount;
+    const int number_of_coins;
+	int count_result;
+    int *coins;
+	int *result;
+
+	void PrintTable(const int *table, const char *str = "");
+	void SearchResult(const int rest_amount, const int level);
+};
 
 int main()
 {
-	const int amount = 25;
-	const int coins[NUMBER_OF_COINS] = {6, 7, 8, 9, 10};
-	int result[NUMBER_OF_COINS] = {0};
+    const int amount = 25;
+    const int number_of_coins = 5;
+    const int coins[10] = {6, 7, 8, 9, 10};
 
-	PrintTable(coins, "Coins:");
-	
-	int count = SearchResult(amount, NUMBER_OF_COINS - 1, coins, result);
+    Exchange exchange(amount, number_of_coins, coins);
 
-	printf("Have done: %d.\n", count);
+    exchange.Run();
 }
 
-void PrintTable(const int *coins, const char *str)
+Exchange::Exchange(const int a, const int n, const int *c): total_amount(a), number_of_coins(n), count_result(0)
 {
-	printf("%s", str);
-	for(int i = 0; i < NUMBER_OF_COINS; i++)
-		printf("\t%d", *(coins + i));
-	printf("\n");
+    coins = new int[number_of_coins];
+    result = new int[number_of_coins];
+    for(int i = number_of_coins; i >= 0; i --)
+        *(coins + i) = *(c + i);
+    PrintTable(coins, "Coins:");
 }
 
-int SearchResult(const int amount, const int level, const int *coins, int *result)
+Exchange::~Exchange()
 {
-	static int count = 0;
-	int i = amount / coins[level];
+    delete [] coins;
+    delete [] result;
+}
 
-	while(i >= 0) {
-		const int weight = coins[level] * i;
-		*(result + level) = i--;
-		if(weight == amount) {
+void Exchange::Run()
+{
+    SearchResult(total_amount, number_of_coins - 1);
+    cout << "Have done: " << count_result << endl;
+}
+
+void Exchange::PrintTable(const int *table, const char *str)
+{
+    cout << str;
+	for(int i = 0; i < number_of_coins; i++)
+        cout << '\t' << *(table + i);
+    cout << endl;
+}
+
+void Exchange::SearchResult(const int rest_amount, const int level)
+{
+	int n = rest_amount / *(coins + level);
+
+	while(n >= 0) {
+		const int weight = *(coins + level) * n;
+		*(result + level) = n;
+		n = (level == 0)? -1 : n - 1;
+		if(weight == rest_amount) {
 			PrintTable(result);
-			count ++;
-			continue;
+			count_result ++;
 		}
-		if(level == 0)
-			break;
-		SearchResult(amount - weight, level - 1, coins, result);
+		else if(level != 0)
+			SearchResult(rest_amount - weight, level - 1);
 	}
 	*(result + level) = 0;
-
-	return count;
 }
-
