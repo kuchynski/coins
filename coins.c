@@ -4,11 +4,9 @@
 #include <string.h>
 #include "storage.h"
 
-#define AMOUNT			2500000
-
 void PrintTable(const unsigned *coins);
 void PrintList(const int *list);
-unsigned SearchResultEnumeration(const int amount, const int level, const int *coins, unsigned *result);
+unsigned SearchResultEnumeration(const int amount, const int level, const int *coins, int *result);
 unsigned SearchResultList(const int amount, const int level, const int *coins, unsigned *result);
 
 int attempt = 0;
@@ -20,15 +18,15 @@ int main()
 	unsigned result[NUMBER_COINS] = {0};
 	int i;
 	
-	//for(i = 0; i < NUMBER_COINS; i ++)
-		//coins[i] = (i + 1) * 5;
+	for(i = 0; i < NUMBER_COINS; i ++)
+		coins[i] = (i + 1) * 5;
 	
 	PrintTable(coins);
 	
 	attempt = 0;
 	unsigned count1 = SearchResultList(amount, NUMBER_COINS - 1, coins, result);
 	if(count1) {
-		printf("Solution exists %ud(attempts %d)\n", count1, attempt);
+		printf("Solution exists %d(attempts %d)\n", count1, attempt);
 		PrintTable(result);
 	}
 	else
@@ -89,24 +87,33 @@ unsigned SearchResultList(const int amount, const int level, const int *coins, u
 		}
 	}
 
-	
 	for(i = 1; i <= middle; i ++) {
+//printf("q1 %d\n", i);	
 		unsigned *table_i = StorageGetCoins(storage, i);
 		if(table_i) {
 			int a = i;// + 1;
 			int new_a = a + i;
 			for(; new_a <= amount; a++, new_a++) {				
-				unsigned *table_a = StorageGetCoins(storage, a);
-				attempt ++;
-				if(table_a) {					
+				//unsigned *table_a = StorageGetCoins(storage, a);
+				unsigned *table_a = StorageGetNextValidCoins(storage, &a);
+//printf("q1 %x %d %d\n", table_a, new_a, a);
+				attempt ++;				
+				if(table_a) {
+					new_a = a + i;
+//printf("q3 %d %d %d\n", i, a, new_a);
 					FoldTables(table_fold, table_a, table_i);
 					StorageSetCell(storage, new_a, table_fold);
 					if(new_a == amount) {
+//printf("q1 %d %d %d\n", i, a, new_a);
 						//PrintTable(table_fold);
 						ret ++;
+						//break;
 					}
 				}
+				else
+					break;
 			}
+//printf("q2\n");
 		}
 	}
 
@@ -128,7 +135,7 @@ void PrintList(const int *list)
 
 unsigned global_count = 0;
 
-unsigned SearchResultEnumeration(const int amount, const int level, const int *coins, unsigned *result)
+unsigned SearchResultEnumeration(const int amount, const int level, const int *coins, int *result)
 {
 	int n = amount / *(coins + level);
 	attempt ++;

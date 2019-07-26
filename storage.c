@@ -56,7 +56,7 @@ unsigned GetAmount(unsigned *coins)
 int StorageSetCell(struct Storage *storage, unsigned n, unsigned *coins)
 {
     const unsigned n_high_list = n >> INDEXES_LOW_BITS;
-    const unsigned n_low_list = n & (INDEXES_LOW_BITS? 0xFFFFFFFF >> INDEXES_HIGH_BITS : 0);
+    const unsigned n_low_list = n & (0xFFFFFFFF >> INDEXES_HIGH_BITS);
     struct Cell **pindexes = storage->pindexes_high[n_high_list];
     struct Cell *index;
 
@@ -67,7 +67,7 @@ int StorageSetCell(struct Storage *storage, unsigned n, unsigned *coins)
 
         storage->memory_used += (sizeof(struct Cell*) * INDEXES_LOW_AMOUNT);
         memset(pindexes, 0, sizeof(struct Cell*) * INDEXES_LOW_AMOUNT);
-printf("A1 %x(%d %d %d)\n", pindexes, sizeof(struct Cell*) * INDEXES_LOW_AMOUNT, sizeof(struct Cell*), INDEXES_LOW_AMOUNT);
+//printf("A1 %x(%d %d %d)\n", pindexes, sizeof(struct Cell*) * INDEXES_LOW_AMOUNT, sizeof(struct Cell*), INDEXES_LOW_AMOUNT);
     }
 
     index = pindexes[n_low_list];
@@ -100,19 +100,45 @@ printf("A1 %x(%d %d %d)\n", pindexes, sizeof(struct Cell*) * INDEXES_LOW_AMOUNT,
 struct Cell* ODGetIndex(struct Storage *storage, unsigned n)
 {
     unsigned n_high_list = n >> INDEXES_LOW_BITS;
-    unsigned n_low_list = n & (INDEXES_LOW_BITS? 0xFFFFFFFF >> INDEXES_HIGH_BITS : 0);
+    const unsigned n_low_list = n & (0xFFFFFFFF >> INDEXES_HIGH_BITS);
     struct Cell **pindexes = storage->pindexes_high[n_high_list];
-    struct Cell *index = NULL;
-            
-    if(pindexes != NULL)
-        index = pindexes[n_low_list];
+    //if(!pindexes)
+		//printf("a2 %d %x %x\n", n, n_high_list, n_low_list);
 
-    return index;
+	return pindexes? pindexes[n_low_list] : NULL;
 }
 
 unsigned* StorageGetCoins(struct Storage *storage, unsigned n)
 {
 	struct Cell *index = ODGetIndex(storage, n);
+    //if(!index)
+		//printf("a3 %d\n", n);
+	
+	return index? index->coins : NULL;
+}
+
+unsigned* StorageGetNextValidCoins(struct Storage *storage, unsigned *n)
+{
+	struct Cell **pindexes;
+	struct Cell *index = NULL;
+	unsigned n_tmp = *n;
+	unsigned n_high_list = n_tmp >> INDEXES_LOW_BITS;
+	unsigned n_low_list = n_tmp & (0xFFFFFFFF >> INDEXES_HIGH_BITS);
+	
+	for(; n_high_list <= (AMOUNT >> INDEXES_LOW_BITS); n_high_list ++) {	
+		pindexes = storage->pindexes_high[n_high_list];
+		if(pindexes) {
+			for(; n_low_list < INDEXES_LOW_AMOUNT; n_low_list ++) {	
+				index = pindexes[n_low_list];
+				if(index) {
+					*n = (n_high_list << INDEXES_LOW_BITS) + n_low_list;
+//printf("ne windex %d %d %d\n", *n, n_high_list, n_low_list);
+					break;
+				}
+			}
+		}
+		n_low_list = 0;
+	}
 	
 	return index? index->coins : NULL;
 }
