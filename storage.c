@@ -1,12 +1,27 @@
 
-
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
-#include "storage.h"
 
+#include "storage.h"
+#include "init.h"
+
+#define INDEXES_HIGH_BITS		16
+#define INDEXES_HIGH_AMOUNT		(1 << INDEXES_HIGH_BITS)
 #define INDEXES_LOW_BITS      (32 - INDEXES_HIGH_BITS)
 #define INDEXES_LOW_AMOUNT    (1 << INDEXES_LOW_BITS)
+
+struct Cell
+{
+    unsigned amount;
+    unsigned coins[NUMBER_COINS];
+};
+
+struct Storage
+{
+    struct Cell **pindexes_high[INDEXES_HIGH_AMOUNT];
+    unsigned memory_used;
+};
 
 struct Storage* StorageCreate(void)
 {
@@ -21,8 +36,10 @@ struct Storage* StorageCreate(void)
     return storage;
 }
 
-void StorageDestroy(struct Storage *storage)
+unsigned StorageDestroy(struct Storage *storage)
 {
+	unsigned memory_used = storage->memory_used;
+	
     if(storage) {
         unsigned n_high_list;
         for(n_high_list = 0; n_high_list < INDEXES_HIGH_AMOUNT; n_high_list++) {
@@ -37,9 +54,9 @@ void StorageDestroy(struct Storage *storage)
             }
 			free(pindexes);
         }
-		printf("Memory used %d\n", storage->memory_used);
         free(storage);
     }
+	return memory_used;
 }
 
 unsigned GetAmount(unsigned *coins)
@@ -60,20 +77,17 @@ int StorageSetCell(struct Storage *storage, unsigned n, unsigned *coins)
     struct Cell **pindexes = storage->pindexes_high[n_high_list];
     struct Cell *index;
 
-//printf("Add %x(%d %d)\n", n, n_high_list, n_low_list);
     if(pindexes == NULL) {
         if((pindexes = malloc(sizeof(struct Cell*) * INDEXES_LOW_AMOUNT)) == NULL)
             return -1;
 
         storage->memory_used += (sizeof(struct Cell*) * INDEXES_LOW_AMOUNT);
         memset(pindexes, 0, sizeof(struct Cell*) * INDEXES_LOW_AMOUNT);
-//printf("A1 %x(%d %d %d)\n", pindexes, sizeof(struct Cell*) * INDEXES_LOW_AMOUNT, sizeof(struct Cell*), INDEXES_LOW_AMOUNT);
     }
 
     index = pindexes[n_low_list];
 
-//printf("A2 %x\n", index);
-    if(index != NULL) {///////////////////////////// just set new value if it's needed
+    if(index != NULL) {// just set new value if it's needed
 		unsigned amount = GetAmount(coins);
 		if(index->amount > amount) {
 			index->amount = amount;
@@ -90,10 +104,8 @@ int StorageSetCell(struct Storage *storage, unsigned n, unsigned *coins)
 	memcpy(index->coins, coins, sizeof(index->coins));
 	
     pindexes[n_low_list] = index;
-//printf("A3 %x\n", index);
     storage->pindexes_high[n_high_list] = pindexes;
 
-//printf("a2 %x\n", index);
     return 0;
 }
 
@@ -102,8 +114,6 @@ struct Cell* ODGetIndex(struct Storage *storage, unsigned n)
     unsigned n_high_list = n >> INDEXES_LOW_BITS;
     const unsigned n_low_list = n & (0xFFFFFFFF >> INDEXES_HIGH_BITS);
     struct Cell **pindexes = storage->pindexes_high[n_high_list];
-    //if(!pindexes)
-		//printf("a2 %d %x %x\n", n, n_high_list, n_low_list);
 
 	return pindexes? pindexes[n_low_list] : NULL;
 }
@@ -111,8 +121,6 @@ struct Cell* ODGetIndex(struct Storage *storage, unsigned n)
 unsigned* StorageGetCoins(struct Storage *storage, unsigned n)
 {
 	struct Cell *index = ODGetIndex(storage, n);
-    //if(!index)
-		//printf("a3 %d\n", n);
 	
 	return index? index->coins : NULL;
 }
@@ -133,13 +141,13 @@ unsigned* StorageGetNextValidCoins(struct Storage *storage, unsigned *n)
 				if(index) {
 					*n = (n_high_list << INDEXES_LOW_BITS) + n_low_list;
 //printf("ne windex %d %d %d\n", *n, n_high_list, n_low_list);
-					break;
+					return index->coins;
 				}
 			}
 		}
 		n_low_list = 0;
 	}
 	
-	return index? index->coins : NULL;
+	return NULL;
 }
 
