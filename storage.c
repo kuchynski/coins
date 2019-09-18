@@ -14,7 +14,7 @@
 struct Cell
 {
     unsigned amount;
-    unsigned coins[NUMBER_COINS];
+    unsigned coins[COINS_NUMBER];
 };
 
 struct Storage
@@ -64,7 +64,7 @@ unsigned GetAmount(unsigned *coins)
 	unsigned ret = 0;
 	unsigned i = 0;
 	
-	for(i = 0; i < NUMBER_COINS; i ++)
+	for(i = 0; i < COINS_NUMBER; i ++)
 		ret += coins[i];
 	
 	return ret;
